@@ -1,6 +1,8 @@
+import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 
+import Heading from 'components/Heading';
 import Spinner from 'components/Spinner';
 
 const Dashboard = () => {
@@ -19,7 +21,19 @@ const Dashboard = () => {
     router.push('/setup');
   }
 
-  return <div></div>;
+  return (
+    <div>
+      <Head>
+        <title>Digital Downloads</title>
+        <meta name='description' content='Digital Downloads Website' />
+        <link rel='icon' href='/favicon.ico' />
+      </Head>
+
+      <Heading />
+
+      <h1 className='flex justify-center mt-20 text-xl'>Dashboard</h1>
+    </div>
+  );
 };
 
 export default Dashboard;
