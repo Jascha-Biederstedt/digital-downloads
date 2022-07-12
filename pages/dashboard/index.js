@@ -1,4 +1,5 @@
 import Head from 'next/head';
+import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 
@@ -32,6 +33,12 @@ const Dashboard = () => {
       <Heading />
 
       <h1 className='flex justify-center mt-20 text-xl'>Dashboard</h1>
+
+      <div className='flex justify-center mt-10'>
+        <Link href={`/dashboard/new`}>
+          <a className='text-xl border p-2'>Create a new product</a>
+        </Link>
+      </div>
     </div>
   );
 };
