@@ -1,44 +1,27 @@
 import Head from 'next/head';
 import Link from 'next/link';
-import { useRouter } from 'next/router';
-import { useSession, getSession } from 'next-auth/react';
 
 import prisma from 'lib/prisma';
-import { getProducts } from 'lib/data';
+import { getProducts, getUser } from 'lib/data';
 
 import Heading from 'components/Heading';
-import Spinner from 'components/Spinner';
 
 export const getServerSideProps = async context => {
-  const session = await getSession(context);
-  if (!session) return { props: {} };
+  let user = await getUser(context.params.id, prisma);
+  user = JSON.parse(JSON.stringify(user));
 
-  let products = await getProducts({ author: session.user.id }, prisma);
+  let products = await getProducts({ author: context.params.id }, prisma);
   products = JSON.parse(JSON.stringify(products));
 
   return {
     props: {
+      user,
       products,
     },
   };
 };
 
-const Dashboard = ({ products }) => {
-  const { data: session, status } = useSession();
-  const router = useRouter();
-
-  const loading = status === 'loading';
-
-  if (loading) return <Spinner />;
-
-  if (!session) {
-    router.push('/');
-  }
-
-  if (session && !session.user.name) {
-    router.push('/setup');
-  }
-
+const Profile = ({ user, products }) => {
   return (
     <div>
       <Head>
@@ -49,13 +32,9 @@ const Dashboard = ({ products }) => {
 
       <Heading />
 
-      <h1 className='flex justify-center mt-20 text-xl'>Dashboard</h1>
-
-      <div className='flex justify-center mt-10'>
-        <Link href={`/dashboard/new`}>
-          <a className='text-xl border p-2'>Create a new product</a>
-        </Link>
-      </div>
+      <h1 className='flex justify-center mt-20 text-xl'>
+        Products made by {user.name}
+      </h1>
 
       <div className='flex justify-center mt-10'>
         <div className='flex flex-col w-full '>
@@ -79,11 +58,6 @@ const Dashboard = ({ products }) => {
                   )}
                 </div>
                 <div className=''>
-                  <Link href={`/dashboard/product/${product.id}`}>
-                    <a className='text-sm border p-2 font-bold uppercase'>
-                      Edit
-                    </a>
-                  </Link>
                   <Link href={`/product/${product.id}`}>
                     <a className='text-sm border p-2 font-bold uppercase ml-2'>
                       View
@@ -98,4 +72,4 @@ const Dashboard = ({ products }) => {
   );
 };
 
-export default Dashboard;
+export default Profile;
