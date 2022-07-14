@@ -1,10 +1,12 @@
 import Head from 'next/head';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 
 import prisma from 'lib/prisma';
 import { getProduct } from 'lib/data';
 
 import Heading from 'components/Heading';
+import Spinner from 'components/Spinner';
 
 export const getServerSideProps = async context => {
   let product = await getProduct(context.params.id, prisma);
@@ -18,6 +20,12 @@ export const getServerSideProps = async context => {
 };
 
 const Product = ({ product }) => {
+  const { data: session, status } = useSession();
+
+  const loading = status === 'loading';
+
+  if (loading) return <Spinner />;
+
   if (!product) {
     return null;
   }
@@ -28,12 +36,13 @@ const Product = ({ product }) => {
         <title>Digital Downloads</title>
         <meta name='description' content='Digital Downloads Website' />
         <link rel='icon' href='/favicon.ico' />
+        <script src='https://js.stripe.com/v3/' async></script>
       </Head>
 
       <Heading />
 
       <div className='flex justify-center'>
-        <div className='border flex flex-col w-full md:w-2/3 xl:w-1/3 mx-auto px-4 mt-10 px-10'>
+        <div className='border flex flex-col w-full md:w-2/3 xl:w-1/3 mx-auto px-4 mt-10'>
           <div className='flex justify-between py-10'>
             {product.image && (
               <img src={product.image} className='w-14 h-14 flex-initial' />
@@ -49,9 +58,62 @@ const Product = ({ product }) => {
               )}
             </div>
             <div className=''>
-              <button className='text-sm border p-2 font-bold uppercase'>
-                PURCHASE
-              </button>
+              {!session && <p>Login first</p>}
+              {session && (
+                <>
+                  {session.user.id !== product.author.id ? (
+                    <button
+                      className='text-sm border p-2 font-bold uppercase'
+                      onClick={async () => {
+                        if (product.free) {
+                          await fetch('/api/download', {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                              product_id: product.id,
+                            }),
+                          });
+
+                          router.push('/dashboard');
+                        } else {
+                          const res = await fetch('/api/stripe/session', {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                              amount: product.price,
+                              title: product.title,
+                              product_id: product.id,
+                            }),
+                          });
+
+                          const data = await res.json();
+
+                          if (data.status === 'error') {
+                            alert(data.message);
+                            return;
+                          }
+
+                          const sessionId = data.sessionId;
+                          const stripePublicKey = data.stripePublicKey;
+
+                          const stripe = Stripe(stripePublicKey);
+                          const { error } = await stripe.redirectToCheckout({
+                            sessionId,
+                          });
+                        }
+                      }}
+                    >
+                      {product.free ? 'DOWNLOAD' : 'PURCHASE'}
+                    </button>
+                  ) : (
+                    'Your product'
+                  )}
+                </>
+              )}
             </div>
           </div>
           <div className='mb-10'>{product.description}</div>
