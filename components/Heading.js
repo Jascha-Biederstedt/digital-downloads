@@ -29,9 +29,19 @@ const Heading = () => {
 
       {session &&
         (router.asPath === '/dashboard' ? (
-          <a className='flex'>
+          <>
+            <div className='mr-3'>
+              <Link href={`/dashboard/sales`}>
+                <a className='underline'>See sales</a>
+              </Link>
+            </div>
+            <div className='mr-3'>
+              <Link href={`/dashboard/new`}>
+                <a className='underline'>Create a new product</a>
+              </Link>
+            </div>
             <p className='mr-3 font-bold'>Dashboard</p>
-          </a>
+          </>
         ) : (
           <Link href={`/dashboard`}>
             <a className='flex'>
